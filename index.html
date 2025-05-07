@@ -133,14 +133,14 @@
     <input type="text" id="newKeyName" placeholder="鍵の名前（例：青い鍵）" />
     <textarea id="newKeyDesc" placeholder="見た目の説明を入力"></textarea>
     <button onclick="saveKey()">💾 保存</button>
+
+    <h2>📤 鍵データのバックアップと復元</h2>
+    <button onclick="exportKeys()">⬇️ エクスポート（保存）</button>
+    <input type="file" id="importFile" accept="application/json" onchange="importKeys(event)" />
   </div>
 
   <script>
-    const gifList = [
-      "gif1.gif",
-      "gif2.gif",
-      "gif3.gif"
-    ];
+    const gifList = ["gif1.gif", "gif2.gif", "gif3.gif"];
     function reloadGif() {
       const newGif = gifList[Math.floor(Math.random() * gifList.length)];
       document.getElementById("headerGif").src = newGif + "?t=" + new Date().getTime();
@@ -152,11 +152,18 @@
     const searchEl = document.getElementById("searchInput");
     let keys = JSON.parse(localStorage.getItem("keys")) || {};
 
+    function normalize(text) {
+      return text.toLowerCase()
+        .replace(/\s/g, '')
+        .replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+        .replace(/[\u30a1-\u30f6]/g, s => String.fromCharCode(s.charCodeAt(0) - 0x60));
+    }
+
     function refreshSelect() {
-      const filter = searchEl.value.trim().toLowerCase();
+      const filter = normalize(searchEl.value);
       selectEl.innerHTML = '<option value="">-- 鍵を選んでください --</option>';
       Object.keys(keys)
-        .filter(name => name.toLowerCase().includes(filter))
+        .filter(name => normalize(name).includes(filter))
         .forEach(name => {
           const option = document.createElement("option");
           option.value = name;
@@ -211,6 +218,33 @@
     function clearInput() {
       document.getElementById("newKeyName").value = "";
       document.getElementById("newKeyDesc").value = "";
+    }
+
+    function exportKeys() {
+      const blob = new Blob([JSON.stringify(keys, null, 2)], { type: "application/json" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "keys_backup.json";
+      link.click();
+    }
+
+    function importKeys(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (typeof imported !== 'object') throw new Error();
+          keys = imported;
+          localStorage.setItem("keys", JSON.stringify(keys));
+          refreshSelect();
+          alert("インポート完了しました！");
+        } catch {
+          alert("インポート失敗：正しいJSONファイルを選んでください。");
+        }
+      };
+      reader.readAsText(file);
     }
 
     refreshSelect();
