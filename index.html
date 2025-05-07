@@ -153,10 +153,26 @@
     let keys = JSON.parse(localStorage.getItem("keys")) || {};
 
     function normalize(text) {
-      return text.toLowerCase()
+      return text
+        .toLowerCase()
         .replace(/\s/g, '')
         .replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
-        .replace(/[\u30a1-\u30f6]/g, s => String.fromCharCode(s.charCodeAt(0) - 0x60));
+        .replace(/[\u30a1-\u30f6]/g, s => {
+          const kanaMap = {
+            'ァ': 'あ', 'ィ': 'い', 'ゥ': 'う', 'ェ': 'え', 'ォ': 'お',
+            'ガ': 'か', 'ギ': 'き', 'グ': 'く', 'ゲ': 'け', 'ゴ': 'こ',
+            'サ': 'さ', 'シ': 'し', 'ス': 'す', 'セ': 'せ', 'ソ': 'そ',
+            'タ': 'た', 'チ': 'ち', 'ツ': 'つ', 'テ': 'て', 'ト': 'と',
+            'ナ': 'な', 'ニ': 'に', 'ヌ': 'ぬ', 'ネ': 'ね', 'ノ': 'の',
+            'ハ': 'は', 'ヒ': 'ひ', 'フ': 'ふ', 'ヘ': 'へ', 'ホ': 'ほ',
+            'マ': 'ま', 'ミ': 'み', 'ム': 'む', 'メ': 'め', 'モ': 'も',
+            'ヤ': 'や', 'ユ': 'ゆ', 'ヨ': 'よ',
+            'ラ': 'ら', 'リ': 'り', 'ル': 'る', 'レ': 'れ', 'ロ': 'ろ',
+            'ワ': 'わ', 'ヲ': 'を', 'ン': 'ん',
+            'ー': '', 'ッ': '', 'ャ': 'や', 'ュ': 'ゆ', 'ョ': 'よ'
+          };
+          return kanaMap[s] || s;
+        });
     }
 
     function refreshSelect() {
