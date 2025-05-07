@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>鍵の見た目システム</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    .header-container {
+      position: relative;
+      text-align: center;
+      padding-top: 1rem;
+    }
+    .header-gif {
+      max-width: 640px;
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+    }
+    .reload-button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #333;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .reload-button:hover {
+      background: #555;
+    }
+    .music-controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.8rem;
+      margin: 1rem auto;
+      padding: 0 1rem;
+    }
+    .music-controls button {
+      flex: 1 1 120px;
+      background: #607d8b;
+      color: white;
+      border: none;
+      padding: 0.7rem 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .music-controls button:hover {
+      background: #78909c;
+    }
+    .container {
+      max-width: 600px;
+      width: 90%;
+      margin: auto;
+      background: white;
+      padding: 2rem 1.5rem;
+      border-radius: 10px;
+      margin-top: 1rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+    }
+    select, input, textarea, button {
+      width: 100%;
+      padding: 0.8rem;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    textarea { resize: vertical; }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    .danger {
+      background: #e53935;
+    }
+    .info {
+      background: #039be5;
+    }
+    p {
+      background: #eef;
+      padding: 1rem;
+      border-left: 5px solid #88c;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header-container">
+    <img id="headerGif" class="header-gif" src="" alt="ヘッダーGIF" />
+    <button class="reload-button" onclick="reloadGif()">🔄 GIF変更</button>
+  </div>
+
+  <div class="music-controls">
+    <button onclick="document.getElementById('bgm').play()">▶️ 音楽再生</button>
+    <button onclick="document.getElementById('bgm').pause()">⏹ 音楽停止</button>
+  </div>
+  <audio id="bgm" src="utsu_8bit.mp3" loop></audio>
+
+  <div class="container">
+    <h2>🔑 鍵を検索・選んで見た目を表示</h2>
+    <input type="text" id="searchInput" placeholder="鍵の名前を検索…" oninput="refreshSelect()" />
+    <select id="keySelect" onchange="updateDescription()">
+      <option value="">-- 鍵を選んでください --</option>
+    </select>
+    <p id="description">ここに鍵の見た目が表示されます。</p>
+    <button class="info" onclick="loadEdit()">✏️ 編集</button>
+    <button class="danger" onclick="deleteKey()">🗑️ 削除</button>
+
+    <hr>
+    <h2>📝 鍵の追加・編集</h2>
+    <input type="text" id="newKeyName" placeholder="鍵の名前（例：青い鍵）" />
+    <textarea id="newKeyDesc" placeholder="見た目の説明を入力"></textarea>
+    <button onclick="saveKey()">💾 保存</button>
+  </div>
+
+  <script>
+    const gifList = [
+      "マキシマムザホルモン.gif",
+      "マキシマムザホルモン-2.gif",
+      "マキシマムザホルモン-3.gif"
+    ];
+    function reloadGif() {
+      const newGif = gifList[Math.floor(Math.random() * gifList.length)];
+      document.getElementById("headerGif").src = newGif + "?t=" + new Date().getTime();
+    }
+    reloadGif();
+
+    const selectEl = document.getElementById("keySelect");
+    const descEl = document.getElementById("description");
+    const searchEl = document.getElementById("searchInput");
+    let keys = JSON.parse(localStorage.getItem("keys")) || {};
+
+    function refreshSelect() {
+      const filter = searchEl.value.trim().toLowerCase();
+      selectEl.innerHTML = '<option value="">-- 鍵を選んでください --</option>';
+      Object.keys(keys)
+        .filter(name => name.toLowerCase().includes(filter))
+        .forEach(name => {
+          const option = document.createElement("option");
+          option.value = name;
+          option.textContent = name;
+          selectEl.appendChild(option);
+        });
+    }
+
+    function updateDescription() {
+      const key = selectEl.value;
+      descEl.textContent = key && keys[key] ? keys[key] : "ここに鍵の見た目が表示されます。";
+    }
+
+    function saveKey() {
+      const name = document.getElementById("newKeyName").value.trim();
+      const desc = document.getElementById("newKeyDesc").value.trim();
+      if (!name || !desc) {
+        alert("名前と説明の両方を入力してください。");
+        return;
+      }
+      keys[name] = desc;
+      localStorage.setItem("keys", JSON.stringify(keys));
+      refreshSelect();
+      alert("保存しました！");
+      clearInput();
+    }
+
+    function deleteKey() {
+      const selected = selectEl.value;
+      if (!selected || !keys[selected]) {
+        alert("削除する鍵を選んでください。");
+        return;
+      }
+      if (!confirm(`「${selected}」を削除しますか？`)) return;
+      delete keys[selected];
+      localStorage.setItem("keys", JSON.stringify(keys));
+      refreshSelect();
+      updateDescription();
+      alert("削除しました。");
+    }
+
+    function loadEdit() {
+      const selected = selectEl.value;
+      if (!selected || !keys[selected]) {
+        alert("編集する鍵を選んでください。");
+        return;
+      }
+      document.getElementById("newKeyName").value = selected;
+      document.getElementById("newKeyDesc").value = keys[selected];
+    }
+
+    function clearInput() {
+      document.getElementById("newKeyName").value = "";
+      document.getElementById("newKeyDesc").value = "";
+    }
+
+    refreshSelect();
+  </script>
+</body>
+</html>
